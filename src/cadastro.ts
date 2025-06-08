@@ -1,63 +1,57 @@
 import swal from "sweetalert2";
 import { makeRequest } from "./utils";
 
-const searchButton = document.getElementById("search-cep-btn");
-
+const searchButton = document.getElementById(
+  "search-cep-btn"
+) as HTMLButtonElement;
 const cep = document.getElementById("cep") as HTMLInputElement;
-if (!cep) {
-  throw new Error("No CEP input found");
-}
 
 const address = document.getElementById("address") as HTMLInputElement;
-if (!address) {
-  throw new Error("No address input found");
-}
-
 const number = document.getElementById("number") as HTMLInputElement;
-if (!number) {
-  throw new Error("No number input found");
-}
-
 const neighborhood = document.getElementById(
   "neighborhood"
 ) as HTMLInputElement;
-if (!neighborhood) {
-  throw new Error("No neighborhood input found");
-}
-
 const city = document.getElementById("city") as HTMLInputElement;
-if (!city) {
-  throw new Error("No city input found");
-}
-
 const state = document.getElementById("state") as HTMLSelectElement;
-if (!state) {
-  throw new Error("No state input found");
+
+if (
+  !searchButton ||
+  !cep ||
+  !address ||
+  !number ||
+  !neighborhood ||
+  !city ||
+  !state
+) {
+  throw new Error("One or more form elements are missing.");
 }
 
-searchButton?.addEventListener("click", async () => {
-  cep.disabled = true;
-
-  if (!cep.value || cep.value.length !== 8) {
-    await swal.fire("Erro", "O CEP precisa de exatos 8 números.", "error");
+async function doSearch() {
+  async function showError(desc: string) {
+    await swal.fire("Erro", desc, "error");
+    searchButton.disabled = false;
     cep.disabled = false;
     cep.focus();
+  }
+
+  cep.disabled = true;
+  searchButton.disabled = true;
+
+  const cepRegex = /^[0-9]{8}$/;
+  if (!cepRegex.test(cep.value)) {
+    await showError("O CEP precisa conter exatamente 8 números.");
     return;
   }
 
   const data = await makeRequest(cep.value).catch(() => null);
 
   if (!data) {
-    await swal.fire("Erro", "Não foi possível buscar o CEP.", "error");
-    cep.disabled = false;
-    cep.focus();
+    await showError("Não foi possível buscar o CEP.");
     return;
   }
 
   if ("erro" in data) {
-    await swal.fire("Erro", "CEP não encontrado.", "error");
-    cep.disabled = false;
-    cep.focus();
+    await showError("CEP não encontrado.");
     return;
   }
 
@@ -67,28 +61,27 @@ searchButton?.addEventListener("click", async () => {
   state.value = data.uf;
 
   cep.disabled = false;
+  searchButton.disabled = false;
   number.focus();
-});
+}
+
+searchButton.addEventListener("click", doSearch);
 
 let canAutoComplete = true;
 cep.addEventListener("input", () => {
-  if (!searchButton) {
-    return;
-  }
-
   if (cep.value.length < 8) {
     canAutoComplete = true;
   }
 
   if (canAutoComplete && cep.value.length === 8) {
     canAutoComplete = false;
-    searchButton.click();
+    doSearch();
   }
 });
 
 document.getElementById("form")?.addEventListener("submit", (e) => {
-  if (cep.value && document.activeElement === cep && searchButton) {
+  if (cep.value && document.activeElement === cep) {
     e.preventDefault();
-    searchButton.click();
+    doSearch();
   }
 });

@@ -52,7 +52,7 @@ h1 {
 }
 
 button {
-  @apply bg-blue-500 px-4 uppercase py-1.5 shadow-md hover:cursor-pointer active:scale-[97%] text-white rounded-md text-sm;
+  @apply bg-blue-500 px-4 uppercase py-1.5 shadow-md cursor-pointer active:scale-[97%] text-white rounded-md text-sm;
 }
 
 .data-holder-center {
