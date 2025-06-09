@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+form {
+  @apply max-w-[1000px] mx-auto;
+}
+
+hr {
+  @apply my-3 border-gray-300;
+}
+
+h1 {
+  @apply text-2xl;
+}
+
+.data-holder {
+  @apply px-10;
+
+  & div {
+    @apply mb-5 space-y-1 uppercase pl-4;
+
+    & > * {
+      @apply block;
+    }
+
+    & > label {
+      @apply text-gray-700;
+    }
+  }
+
+  & input,
+  & select {
+    @apply w-1/2 px-2 py-1 rounded-sm border border-black/10 shadow-md focus:outline-gray-300 disabled:opacity-80 disabled:bg-gray-300/50 disabled:cursor-not-allowed;
+  }
+
+  & .input-group {
+    @apply flex w-full pl-4 space-x-3 items-end;
+
+    & input,
+    & select,
+    & div {
+      @apply w-full;
+    }
+
+    & select {
+      @apply pl-0;
+    }
+
+    & div {
+      @apply mb-0 pl-0;
+    }
+  }
+}
+
+button {
+  @apply bg-blue-500 px-4 uppercase py-1.5 shadow-md disabled:opacity-80 disabled:cursor-not-allowed not-disabled:cursor-pointer not-disabled:active:scale-[97%] text-white rounded-md text-sm;
+}
+
+.data-holder-center {
+  @apply flex flex-col items-center p-0;
+
+  & div {
+    @apply p-0 w-1/2;
+  }
+
+  & input {
+    @apply w-full;
+  }
+}
