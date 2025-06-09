@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/funcionarios")
+@CrossOrigin("*")
 public class FuncionarioController {
 
     @Autowired

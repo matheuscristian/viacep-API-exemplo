@@ -10,7 +10,7 @@
 
 <body>
     <main class="p-10 bg-gray-200 min-h-screen">
-        <form action="#" class="bg-white rounded-3xl shadow-lg p-5 py-10 relative" id="form">
+        <form class="bg-white rounded-3xl shadow-lg p-5 py-10 relative" id="form">
             <a href="/" class="absolute right-3.5 top-3 opacity-50">
                 <img width="20px" src="src/assets/x.svg" alt="login">
             </a>
@@ -19,15 +19,15 @@
                 <hr>
                 <div>
                     <label for="name">Nome</label>
-                    <input type="text" name="name">
+                    <input type="text" name="name" required>
                 </div>
                 <div>
                     <label for="email">E-mail</label>
-                    <input type="text" name="email">
+                    <input type="email" name="email" required>
                 </div>
                 <div>
                     <label for="password">Senha</label>
-                    <input type="text" name="password">
+                    <input type="password" name="password" required>
                 </div>
             </div>
             <div class="data-holder">
@@ -36,7 +36,7 @@
                 <div class="input-group">
                     <div class="!max-w-1/2">
                         <label for="cep">CEP</label>
-                        <input type="number" name="cep" id="cep">
+                        <input type="number" name="cep" id="cep" required>
                     </div>
                     <button id="search-cep-btn" type="button">
                         <img width="22px" src="/src/assets/search.svg" alt="Buscar">
@@ -45,25 +45,25 @@
                 <div class="input-group">
                     <div>
                         <label for="address">Endereço</label>
-                        <input type="text" name="address" id="address">
+                        <input type="text" name="address" id="address" required>
                     </div>
                     <div>
                         <label for="number">Número</label>
-                        <input type="number" name="number" id="number">
+                        <input type="number" name="number" id="number" required>
                     </div>
                 </div>
                 <div class="input-group">
                     <div>
                         <label for="neighborhood">Bairro</label>
-                        <input type="text" name="neighborhood" id="neighborhood">
+                        <input type="text" name="neighborhood" id="neighborhood" required>
                     </div>
                     <div>
                         <label for="city">Cidade</label>
-                        <input type="text" name="city" id="city">
+                        <input type="text" name="city" id="city" required>
                     </div>
                     <div>
                         <label for="state">Estado</label>
-                        <select name="state" id="state">
+                        <select name="state" id="state" required>
                             <option value="AC">AC</option>
                             <option value="AL">AL</option>
                             <option value="AP">AP</option>
