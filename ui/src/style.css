@@ -29,7 +29,7 @@ h1 {
 
   & input,
   & select {
-    @apply w-1/2 px-2 py-1 rounded-sm border border-black/10 shadow-md focus:outline-gray-300 disabled:opacity-80 disabled:bg-gray-300/50 disabled:cursor-not-allowed;
+    @apply w-1/2 px-2 py-2 rounded-sm border border-black/10 shadow-md focus:outline-gray-300 disabled:opacity-80 disabled:bg-gray-300/50 disabled:cursor-not-allowed;
   }
 
   & .input-group {
@@ -52,7 +52,7 @@ h1 {
 }
 
 button {
-  @apply bg-blue-500 px-4 uppercase py-1.5 shadow-md disabled:opacity-80 disabled:cursor-not-allowed not-disabled:cursor-pointer not-disabled:active:scale-[97%] text-white rounded-md text-sm;
+  @apply bg-blue-500 px-4 uppercase py-2.5 shadow-md disabled:opacity-80 disabled:cursor-not-allowed not-disabled:cursor-pointer not-disabled:active:scale-[97%] text-white rounded-md text-sm;
 }
 
 .data-holder-center {
