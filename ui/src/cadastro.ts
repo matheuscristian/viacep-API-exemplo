@@ -102,7 +102,7 @@ document.getElementById("form")?.addEventListener("submit", (e) => {
     "neighborhood"
   ) as HTMLInputElement;
   const cityInput = form.elements.namedItem("city") as HTMLInputElement;
-  const stateInput = form.elements.namedItem("state") as HTMLInputElement;
+  const stateInput = form.elements.namedItem("state") as HTMLSelectElement;
 
   const data = {
     nome: nameInput.value,
