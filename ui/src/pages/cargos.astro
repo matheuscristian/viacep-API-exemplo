@@ -1,0 +1,84 @@
+---
+import Layout from "../components/Layout.astro";
+---
+
+<style>
+  tr {
+    @apply grid w-full grid-flow-col grid-cols-[0.3fr_1fr_1fr_1fr] text-center;
+  }
+
+  tr th:first-child {
+    @apply border-r border-r-[var(--color-gray-300)];
+  }
+</style>
+
+<Layout>
+  <main class="min-h-screen bg-gray-200 p-10">
+    <div class="rounded-3xl bg-white p-5 py-10 shadow-lg">
+      <div class="px-10">
+        <h1>Cargos</h1>
+        <hr class="!mb-6" />
+      </div>
+      <div class="data-holder">
+        <table class="w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Descrição</th>
+            </tr>
+          </thead>
+          <tbody id="tbody" class="[&_tr]:mt-3"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import Swal from "sweetalert2";
+
+  const tbody = document.getElementById("tbody") as HTMLTableSectionElement;
+
+  fetch("http://localhost:8080/api/cargos")
+    .then((res) => {
+      if (res.ok) {
+        return res.json();
+      }
+
+      throw new Error(res.statusText);
+    })
+    .then((data: { id: number; nome: string; descricao: string }[]) => {
+      for (const cargo of data) {
+        const row = document.createElement("tr");
+        row.className =
+          "grid grid-flow-col grid-cols-[0.3fr_1fr_1fr_1fr] w-full text-center [&_td]:flex [&_td]:items-center [&_td]:justify-center [&_td]:gap-3";
+
+        row.innerHTML = `
+          <td><i>${cargo.id}</i></td>
+          <td>${cargo.nome}</td>
+          <td>${cargo.descricao}</td>
+          <td>
+            <button class="!bg-[var(--color-yellow-500)]">Editar</button>
+            <button class="!bg-[var(--color-red-500)]">Excluir</button>
+          </td>
+        `;
+
+        row.querySelectorAll("button").forEach((btn, i) =>
+          btn.addEventListener("click", () => {
+            if (i === 0) {
+              console.log("Editing");
+            } else {
+              console.log("Deleting");
+            }
+          }),
+        );
+
+        tbody.appendChild(row);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      Swal.fire("Erro!", "Não foi possível carregar os cargos.", "error");
+    });
+</script>

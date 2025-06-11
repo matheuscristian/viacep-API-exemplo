@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/cargos")
+@CrossOrigin("*")
 public class CargoController {
 
     @Autowired

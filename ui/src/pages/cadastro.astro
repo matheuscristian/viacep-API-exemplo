@@ -1,0 +1,243 @@
+---
+import { Image } from "astro:assets";
+import Layout from "../components/Layout.astro";
+import searchIcon from "../assets/search.svg";
+import closeIcon from "../assets/x.svg";
+---
+
+<Layout>
+  <main class="min-h-screen bg-gray-200 p-10">
+    <form class="relative rounded-3xl bg-white p-5 py-10 shadow-lg" id="form">
+      <a href="/" class="absolute top-3 right-3.5 opacity-50">
+        <Image width={20} src={closeIcon} alt="login" />
+      </a>
+      <div class="data-holder">
+        <h1>Cadastro</h1>
+        <hr />
+        <div>
+          <label for="name">Nome</label>
+          <input type="text" name="name" required />
+        </div>
+        <div>
+          <label for="email">E-mail</label>
+          <input type="email" name="email" required />
+        </div>
+        <div>
+          <label for="password">Senha</label>
+          <input type="password" name="password" required />
+        </div>
+      </div>
+      <div class="data-holder">
+        <h1>Endereço</h1>
+        <hr />
+        <div class="input-group">
+          <div class="!max-w-1/2">
+            <label for="cep">CEP</label>
+            <input type="number" name="cep" id="cep" required />
+          </div>
+          <button id="search-cep-btn" type="button">
+            <Image width={22} src={searchIcon} alt="Buscar" />
+          </button>
+        </div>
+        <div class="input-group">
+          <div>
+            <label for="address">Endereço</label>
+            <input type="text" name="address" id="address" required />
+          </div>
+          <div>
+            <label for="number">Número</label>
+            <input type="number" name="number" id="number" required />
+          </div>
+        </div>
+        <div class="input-group">
+          <div>
+            <label for="neighborhood">Bairro</label>
+            <input type="text" name="neighborhood" id="neighborhood" required />
+          </div>
+          <div>
+            <label for="city">Cidade</label>
+            <input type="text" name="city" id="city" required />
+          </div>
+          <div>
+            <label for="state">Estado</label>
+            <select name="state" id="state" required>
+              <option value="AC">AC</option>
+              <option value="AL">AL</option>
+              <option value="AP">AP</option>
+              <option value="AM">AM</option>
+              <option value="BA">BA</option>
+              <option value="CE">CE</option>
+              <option value="DF">DF</option>
+              <option value="ES">ES</option>
+              <option value="GO">GO</option>
+              <option value="MA">MA</option>
+              <option value="MT">MT</option>
+              <option value="MS">MS</option>
+              <option value="MG">MG</option>
+              <option value="PA">PA</option>
+              <option value="PB">PB</option>
+              <option value="PR">PR</option>
+              <option value="PE">PE</option>
+              <option value="PI">PI</option>
+              <option value="RJ">RJ</option>
+              <option value="RN">RN</option>
+              <option value="RS">RS</option>
+              <option value="RO">RO</option>
+              <option value="RR">RR</option>
+              <option value="SC">SC</option>
+              <option value="SP">SP</option>
+              <option value="SE">SE</option>
+              <option value="TO">TO</option>
+            </select>
+          </div>
+        </div>
+        <div class="!mt-14 !mb-0">
+          <button type="submit" class="mx-auto !bg-green-600 !px-8 !py-2">
+            Enviar
+          </button>
+        </div>
+      </div>
+    </form>
+  </main>
+</Layout>
+
+<script>
+  import Swal from "sweetalert2";
+  import { makeRequest } from "../scripts/utils";
+
+  const searchButton = document.getElementById(
+    "search-cep-btn",
+  ) as HTMLButtonElement;
+  const cep = document.getElementById("cep") as HTMLInputElement;
+
+  const address = document.getElementById("address") as HTMLInputElement;
+  const number = document.getElementById("number") as HTMLInputElement;
+  const neighborhood = document.getElementById(
+    "neighborhood",
+  ) as HTMLInputElement;
+  const city = document.getElementById("city") as HTMLInputElement;
+  const state = document.getElementById("state") as HTMLSelectElement;
+
+  if (
+    !searchButton ||
+    !cep ||
+    !address ||
+    !number ||
+    !neighborhood ||
+    !city ||
+    !state
+  ) {
+    throw new Error("One or more form elements are missing.");
+  }
+
+  async function doSearch() {
+    async function showError(desc: string) {
+      await Swal.fire("Erro!", desc, "error");
+      searchButton.disabled = false;
+      cep.disabled = false;
+      cep.focus();
+    }
+
+    cep.disabled = true;
+    searchButton.disabled = true;
+
+    const cepRegex = /^[0-9]{8}$/;
+    if (!cepRegex.test(cep.value)) {
+      await showError("O CEP precisa conter exatamente 8 números.");
+      return;
+    }
+
+    const data = await makeRequest(cep.value).catch(() => null);
+
+    if (!data) {
+      await showError("Não foi possível buscar o CEP.");
+      return;
+    }
+
+    if ("erro" in data) {
+      await showError("CEP não encontrado.");
+      return;
+    }
+
+    address.value = data.logradouro;
+    neighborhood.value = data.bairro;
+    city.value = data.localidade;
+    state.value = data.uf;
+
+    cep.disabled = false;
+    searchButton.disabled = false;
+    number.focus();
+  }
+
+  searchButton.addEventListener("click", doSearch);
+
+  let canAutoComplete = true;
+  cep.addEventListener("input", () => {
+    if (cep.value.length < 8) {
+      canAutoComplete = true;
+    }
+
+    if (canAutoComplete && cep.value.length === 8) {
+      canAutoComplete = false;
+      doSearch();
+    }
+  });
+
+  cep.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && cep.value && document.activeElement === cep) {
+      e.preventDefault();
+      doSearch();
+      return;
+    }
+  });
+
+  document.getElementById("form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const form = e.target as HTMLFormElement;
+
+    const nameInput = form.elements.namedItem("name") as HTMLInputElement;
+    const emailInput = form.elements.namedItem("email") as HTMLInputElement;
+    const passwordInput = form.elements.namedItem(
+      "password",
+    ) as HTMLInputElement;
+    const cepInput = form.elements.namedItem("cep") as HTMLInputElement;
+    const addressInput = form.elements.namedItem("address") as HTMLInputElement;
+    const numberInput = form.elements.namedItem("number") as HTMLInputElement;
+    const neighborhoodInput = form.elements.namedItem(
+      "neighborhood",
+    ) as HTMLInputElement;
+    const cityInput = form.elements.namedItem("city") as HTMLInputElement;
+    const stateInput = form.elements.namedItem("state") as HTMLSelectElement;
+
+    const data = {
+      nome: nameInput.value,
+      email: emailInput.value,
+      senha: passwordInput.value,
+      cep: cepInput.value,
+      endereco: addressInput.value,
+      numero: numberInput.value,
+      bairro: neighborhoodInput.value,
+      cidade: cityInput.value,
+      estado: stateInput.value,
+    };
+
+    fetch("http://localhost:8080/api/funcionarios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+      .then((response) => {
+        if (response.ok) {
+          Swal.fire("Sucesso!", "Cadastro feito com sucesso.", "success");
+          form.reset();
+        } else {
+          Swal.fire("Erro!", "Não foi possível realizar o cadastro.", "error");
+        }
+      })
+      .catch((error) => {
+        console.error("Erro:", error);
+        Swal.fire("Erro!", "Erro de rede ou servidor.", "error");
+      });
+  });
+</script>
