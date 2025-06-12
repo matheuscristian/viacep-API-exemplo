@@ -1,15 +1,13 @@
 ---
-import { Image } from "astro:assets";
 import Layout from "../components/Layout.astro";
-import searchIcon from "../assets/search.svg";
-import closeIcon from "../assets/x.svg";
+import { SearchIcon, X } from "@lucide/astro";
 ---
 
 <Layout>
   <main class="min-h-screen bg-gray-200 p-10">
     <form class="relative rounded-3xl bg-white p-5 py-10 shadow-lg" id="form">
       <a href="/" class="absolute top-3 right-3.5 opacity-50">
-        <Image width={20} src={closeIcon} alt="login" />
+        <X width={20} />
       </a>
       <div class="data-holder">
         <h1>Cadastro</h1>
@@ -36,7 +34,7 @@ import closeIcon from "../assets/x.svg";
             <input type="number" name="cep" id="cep" required />
           </div>
           <button id="search-cep-btn" type="button">
-            <Image width={22} src={searchIcon} alt="Buscar" />
+            <SearchIcon width={22} />
           </button>
         </div>
         <div class="input-group">

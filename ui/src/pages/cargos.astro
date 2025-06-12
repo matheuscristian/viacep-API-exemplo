@@ -1,10 +1,11 @@
 ---
+import { Plus } from "@lucide/astro";
 import Layout from "../components/Layout.astro";
 ---
 
 <style>
   tr {
-    @apply grid w-full grid-flow-col grid-cols-[0.3fr_1fr_1fr_1fr] text-center;
+    @apply grid w-full grid-flow-col grid-cols-[0.3fr_1fr_1fr_0.3fr] text-center;
   }
 
   tr th:first-child {
@@ -16,7 +17,10 @@ import Layout from "../components/Layout.astro";
   <main class="min-h-screen bg-gray-200 p-10">
     <div class="rounded-3xl bg-white p-5 py-10 shadow-lg">
       <div class="px-10">
-        <h1>Cargos</h1>
+        <div class="flex justify-between">
+          <h1>Cargos</h1>
+          <button id="add-btn"><Plus width={20} /></button>
+        </div>
         <hr class="!mb-6" />
       </div>
       <div class="data-holder">
@@ -36,49 +40,230 @@ import Layout from "../components/Layout.astro";
 </Layout>
 
 <script>
-  import Swal from "sweetalert2";
+  import Swal, { type SweetAlertResult } from "sweetalert2";
+  import { createElement, Trash, PenSquare } from "lucide";
+
+  interface ICargo {
+    id: number;
+    nome: string;
+    descricao: string;
+  }
 
   const tbody = document.getElementById("tbody") as HTMLTableSectionElement;
+  const addButton = document.getElementById("add-btn") as HTMLButtonElement;
 
-  fetch("http://localhost:8080/api/cargos")
-    .then((res) => {
-      if (res.ok) {
-        return res.json();
-      }
+  // Fetch abstraction
+  async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(res.statusText);
 
-      throw new Error(res.statusText);
-    })
-    .then((data: { id: number; nome: string; descricao: string }[]) => {
-      for (const cargo of data) {
-        const row = document.createElement("tr");
-        row.className =
-          "grid grid-flow-col grid-cols-[0.3fr_1fr_1fr_1fr] w-full text-center [&_td]:flex [&_td]:items-center [&_td]:justify-center [&_td]:gap-3";
+    if (options?.method !== "DELETE") {
+      return res.json();
+    } else {
+      return true as T;
+    }
+  }
 
-        row.innerHTML = `
-          <td><i>${cargo.id}</i></td>
-          <td>${cargo.nome}</td>
-          <td>${cargo.descricao}</td>
-          <td>
-            <button class="!bg-[var(--color-yellow-500)]">Editar</button>
-            <button class="!bg-[var(--color-red-500)]">Excluir</button>
-          </td>
-        `;
+  // Unified Swal form
+  async function manageRole(
+    title: string,
+    defaultValues: Partial<ICargo> = {},
+  ) {
+    const response: SweetAlertResult<{ role: string; desc: string } | null> =
+      await Swal.fire({
+        title,
+        confirmButtonText: "Confirmar",
+        focusConfirm: false,
+        cancelButtonText: "Cancelar",
+        showCancelButton: true,
+        html: `
+          <div class="data-holder data-holder-center text-left">
+            <div>
+              <label for="role">Nome</label>
+              <input name="role" type="text" id="role" value="${defaultValues.nome || ""}" />
+            </div>
+            <div>
+              <label for="desc">Descrição</label>
+              <input name="desc" type="text" id="desc" value="${defaultValues.descricao || ""}" />
+            </div>
+          </div>
+        `,
+        preConfirm: () => {
+          const role = (
+            document.getElementById("role") as HTMLInputElement
+          ).value.trim();
+          const desc = (
+            document.getElementById("desc") as HTMLInputElement
+          ).value.trim();
+          return role && desc ? { role, desc } : null;
+        },
+      });
 
-        row.querySelectorAll("button").forEach((btn, i) =>
-          btn.addEventListener("click", () => {
-            if (i === 0) {
-              console.log("Editing");
-            } else {
-              console.log("Deleting");
-            }
-          }),
-        );
+    return response;
+  }
 
+  // Row creation
+  function createRow(cargo: ICargo): HTMLTableRowElement {
+    const row = document.createElement("tr");
+    row.dataset.id = String(cargo.id);
+    row.className =
+      "grid grid-flow-col grid-cols-[0.3fr_1fr_1fr_0.3fr] w-full text-center [&_td]:flex [&_td]:items-center [&_td]:justify-center [&_td]:gap-3";
+
+    // ID column
+    const tdId = document.createElement("td");
+    const idText = document.createElement("i");
+    idText.textContent = String(cargo.id);
+    tdId.appendChild(idText);
+    row.appendChild(tdId);
+
+    // Nome column
+    const tdNome = document.createElement("td");
+    tdNome.textContent = cargo.nome;
+    tdNome.classList.add("td-nome");
+    row.appendChild(tdNome);
+
+    // Descrição column
+    const tdDescricao = document.createElement("td");
+    tdDescricao.textContent = cargo.descricao;
+    tdDescricao.classList.add("td-descricao");
+    row.appendChild(tdDescricao);
+
+    // Actions column
+    const tdActions = document.createElement("td");
+
+    const editButton = document.createElement("button");
+    editButton.className = "!bg-[var(--color-yellow-600)] edit-btn";
+    editButton.appendChild(createElement(PenSquare, { width: 18 }));
+    tdActions.appendChild(editButton);
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "!bg-[var(--color-red-500)] delete-btn";
+    deleteButton.appendChild(createElement(Trash, { width: 18 }));
+    tdActions.appendChild(deleteButton);
+
+    row.appendChild(tdActions);
+    return row;
+  }
+
+  // Load cargos initially
+  async function loadCargos() {
+    try {
+      const data = await apiFetch<ICargo[]>("http://localhost:8080/api/cargos");
+      data.forEach((cargo) => {
+        const row = createRow(cargo);
         tbody.appendChild(row);
-      }
-    })
-    .catch((err) => {
+      });
+    } catch (err) {
       console.error(err);
       Swal.fire("Erro!", "Não foi possível carregar os cargos.", "error");
-    });
+    }
+  }
+
+  // Add new cargo
+  addButton.addEventListener("click", async () => {
+    const response = await manageRole("Adicionar cargo");
+
+    if (!response.isConfirmed) return;
+
+    const { value: values } = response;
+    if (!values) {
+      Swal.fire("Erro!", "O cargo e a descrição são obrigatórios!", "error");
+      return;
+    }
+
+    try {
+      const newCargo = await apiFetch<ICargo>(
+        "http://localhost:8080/api/cargos",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nome: values.role,
+            descricao: values.desc,
+          }),
+        },
+      );
+
+      const row = createRow(newCargo);
+      tbody.appendChild(row);
+      Swal.fire("Sucesso!", "Cargo adicionado com sucesso!", "success");
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Erro!", "Não foi possível adicionar o cargo!", "error");
+    }
+  });
+
+  // Global event delegation
+  tbody.addEventListener("click", async (e) => {
+    const target = e.target as HTMLElement;
+    const button = target.closest("button");
+    if (!button) return;
+
+    const row = button.closest("tr") as HTMLTableRowElement;
+    const id = row.dataset.id;
+    if (!id) return;
+
+    const tdNome = row.querySelector(".td-nome") as HTMLTableCellElement;
+    const tdDescricao = row.querySelector(
+      ".td-descricao",
+    ) as HTMLTableCellElement;
+
+    // Edit
+    if (button.classList.contains("edit-btn")) {
+      const currentCargo: ICargo = {
+        id: parseInt(id),
+        nome: tdNome.textContent || "",
+        descricao: tdDescricao.textContent || "",
+      };
+
+      const response = await manageRole("Adicionar cargo", currentCargo);
+
+      if (!response.isConfirmed) return;
+
+      const { value: values } = response;
+      if (!values) {
+        Swal.fire("Erro!", "O cargo e a descrição são obrigatórios!", "error");
+        return;
+      }
+
+      try {
+        const updatedCargo = await apiFetch<ICargo>(
+          `http://localhost:8080/api/cargos/${id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              nome: values.role,
+              descricao: values.desc,
+            }),
+          },
+        );
+
+        tdNome.textContent = updatedCargo.nome;
+        tdDescricao.textContent = updatedCargo.descricao;
+
+        Swal.fire("Sucesso!", "Cargo editado com sucesso.", "success");
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Erro!", "Não foi possível editar o cargo.", "error");
+      }
+    }
+
+    // Delete
+    if (button.classList.contains("delete-btn")) {
+      try {
+        await apiFetch<void>(`http://localhost:8080/api/cargos/${id}`, {
+          method: "DELETE",
+        });
+        row.remove();
+        Swal.fire("Sucesso!", "Cargo deletado com sucesso.", "success");
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Erro!", "Não foi possível deletar o cargo.", "error");
+      }
+    }
+  });
+
+  // Initial load
+  loadCargos();
 </script>
