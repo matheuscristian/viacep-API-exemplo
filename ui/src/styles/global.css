@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 form {
-  @apply max-w-[1000px] mx-auto;
+  @apply mx-auto max-w-[1000px];
 }
 
 hr {
@@ -15,8 +15,13 @@ h1 {
 .data-holder {
   @apply px-10;
 
+  & input,
+  & select {
+    @apply w-1/2;
+  }
+
   & div {
-    @apply mb-5 space-y-1 uppercase pl-4;
+    @apply mb-5 space-y-1 pl-4 uppercase;
 
     & > * {
       @apply block;
@@ -27,13 +32,8 @@ h1 {
     }
   }
 
-  & input,
-  & select {
-    @apply w-1/2 px-2 py-2 rounded-sm border border-black/10 shadow-md focus:outline-gray-300 disabled:opacity-80 disabled:bg-gray-300/50 disabled:cursor-not-allowed;
-  }
-
   & .input-group {
-    @apply flex w-full pl-4 space-x-3 items-end;
+    @apply flex w-full items-end space-x-3 pl-4;
 
     & input,
     & select,
@@ -52,17 +52,23 @@ h1 {
 }
 
 button {
-  @apply bg-blue-500 px-4 uppercase py-2.5 shadow-md disabled:opacity-80 disabled:cursor-not-allowed not-disabled:cursor-pointer not-disabled:active:scale-[97%] text-white rounded-md text-sm;
+  @apply rounded-md bg-blue-500 px-4 py-2.5 text-sm text-white uppercase shadow-md not-disabled:cursor-pointer not-disabled:active:scale-[97%] disabled:cursor-not-allowed disabled:opacity-80;
+}
+
+input,
+select {
+  @apply w-full rounded-sm border border-black/10 px-2 py-2 shadow-md focus:outline-gray-300 disabled:cursor-not-allowed disabled:bg-gray-300/50 disabled:opacity-80;
 }
 
 .data-holder-center {
   @apply flex flex-col items-center p-0;
 
   & div {
-    @apply p-0 w-1/2;
+    @apply w-1/2 p-0;
   }
 
-  & input {
+  & input,
+  select {
     @apply w-full;
   }
 }

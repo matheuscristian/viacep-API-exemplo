@@ -1,0 +1,169 @@
+---
+import { Search } from "@lucide/astro";
+import Layout from "../components/Layout.astro";
+---
+
+<style>
+  tr {
+    @apply grid w-full grid-flow-col grid-cols-[1fr_1fr_1fr_1fr_1fr] text-center;
+  }
+
+  tr th:first-child {
+    @apply border-r border-r-[var(--color-gray-300)];
+  }
+</style>
+
+<Layout>
+  <main class="min-h-screen bg-gray-200 p-10">
+    <div class="rounded-3xl bg-white p-5 py-10 shadow-lg">
+      <div class="px-10">
+        <div class="flex justify-between">
+          <h1>Relatório de Vínculos</h1>
+        </div>
+        <hr class="!mb-6" />
+
+        <div class="mb-6 flex gap-4">
+          <div>
+            <label>Funcionário:</label>
+            <select id="funcionario-select" class="rounded border px-2 py-1">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div>
+            <label>Cargo:</label>
+            <select id="cargo-select" class="rounded border px-2 py-1">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button
+              id="buscar-btn"
+              class="flex items-center gap-2 rounded bg-blue-500 px-4 py-2 text-white"
+            >
+              <Search width={18} /> Buscar
+            </button>
+          </div>
+        </div>
+
+        <div class="data-holder">
+          <table class="w-full">
+            <thead>
+              <tr>
+                <th>Funcionário</th>
+                <th>Cargo</th>
+                <th>Data Início</th>
+                <th>Data Fim</th>
+                <th>Detalhes</th>
+              </tr>
+            </thead>
+            <tbody id="tbody" class="[&_tr]:mt-3"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  interface IFuncionario {
+    id: number;
+    nome: string;
+  }
+
+  interface ICargo {
+    id: number;
+    nome: string;
+  }
+
+  interface IFuncionarioPorCargo {
+    id: number;
+    funcionario: IFuncionario;
+    cargo: ICargo;
+    detalhes?: string | null;
+    dataInicio: string;
+    dataFim?: string | null;
+  }
+
+  async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(res.statusText);
+    return await res.json();
+  }
+
+  const funcionarioSelect = document.getElementById(
+    "funcionario-select",
+  ) as HTMLSelectElement;
+  const cargoSelect = document.getElementById(
+    "cargo-select",
+  ) as HTMLSelectElement;
+  const buscarBtn = document.getElementById("buscar-btn") as HTMLButtonElement;
+  const tbody = document.getElementById("tbody") as HTMLTableSectionElement;
+
+  async function loadFuncionarios(): Promise<void> {
+    const funcionarios = await apiFetch<IFuncionario[]>(
+      "http://localhost:8080/api/funcionarios",
+    );
+    funcionarios.forEach((f) => {
+      const option = document.createElement("option");
+      option.value = String(f.id);
+      option.textContent = f.nome;
+      funcionarioSelect.appendChild(option);
+    });
+  }
+
+  async function loadCargos(): Promise<void> {
+    const cargos = await apiFetch<ICargo[]>("http://localhost:8080/api/cargos");
+    cargos.forEach((c) => {
+      const option = document.createElement("option");
+      option.value = String(c.id);
+      option.textContent = c.nome;
+      cargoSelect.appendChild(option);
+    });
+  }
+
+  function createRow(vinculo: IFuncionarioPorCargo): HTMLTableRowElement {
+    const row = document.createElement("tr");
+    row.className =
+      "grid grid-flow-col grid-cols-[1fr_1fr_1fr_1fr_1fr] w-full text-center [&_td]:flex [&_td]:items-center [&_td]:justify-center [&_td]:gap-3";
+    row.innerHTML = `
+      <td>${vinculo.funcionario.nome}</td>
+      <td>${vinculo.cargo.nome}</td>
+      <td>${vinculo.dataInicio}</td>
+      <td>${vinculo.dataFim || "-"}</td>
+      <td>${vinculo.detalhes || "-"}</td>
+    `;
+    return row;
+  }
+
+  async function buscar(): Promise<void> {
+    tbody.innerHTML = ""; // limpa tabela
+
+    const funcionarioId = funcionarioSelect.value;
+    const cargoId = cargoSelect.value;
+
+    let url = "http://localhost:8080/api/funcionarios-por-cargo";
+
+    if (funcionarioId || cargoId) {
+      const params = new URLSearchParams();
+      if (funcionarioId) params.append("funcionarioId", funcionarioId);
+      if (cargoId) params.append("cargoId", cargoId);
+      url += "?" + params.toString();
+    }
+
+    try {
+      const dados = await apiFetch<IFuncionarioPorCargo[]>(url);
+      dados.forEach((vinculo) => {
+        const row = createRow(vinculo);
+        tbody.appendChild(row);
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao carregar os vínculos.");
+    }
+  }
+
+  buscarBtn.addEventListener("click", buscar);
+
+  loadFuncionarios();
+  loadCargos();
+</script>

@@ -1,0 +1,325 @@
+---
+import { Plus } from "@lucide/astro";
+import Layout from "../components/Layout.astro";
+---
+
+<style>
+  tr {
+    @apply grid w-full grid-flow-col grid-cols-[0.3fr_1fr_1fr_1fr_1fr_0.3fr] text-center;
+  }
+
+  tr th:first-child {
+    @apply border-r border-r-[var(--color-gray-300)];
+  }
+</style>
+
+<Layout>
+  <main class="min-h-screen bg-gray-200 p-10">
+    <div class="rounded-3xl bg-white p-5 py-10 shadow-lg">
+      <div class="px-10">
+        <div class="flex justify-between">
+          <h1>Vínculos Funcionário por Cargo</h1>
+          <button id="add-btn"><Plus width={20} /></button>
+        </div>
+        <hr class="!mb-6" />
+      </div>
+      <div class="data-holder">
+        <table class="w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Funcionário</th>
+              <th>Cargo</th>
+              <th>Data Início</th>
+              <th>Data Fim</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody" class="[&_tr]:mt-3"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import Swal, { type SweetAlertResult } from "sweetalert2";
+  import { createElement, Trash, PenSquare } from "lucide";
+
+  interface IFuncionario {
+    id: number;
+    nome: string;
+  }
+
+  interface ICargo {
+    id: number;
+    nome: string;
+  }
+
+  interface IFuncionarioPorCargo {
+    id: number;
+    funcionario: IFuncionario;
+    cargo: ICargo;
+    detalhes?: string | null;
+    dataInicio: string;
+    dataFim?: string | null;
+  }
+
+  // Utilitário de fetch genérico
+  async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(res.statusText);
+    return options?.method !== "DELETE" ? await res.json() : (true as T);
+  }
+
+  // Elementos DOM tipados
+  const tbody = document.getElementById("tbody") as HTMLTableSectionElement;
+  const addButton = document.getElementById("add-btn") as HTMLButtonElement;
+
+  async function fetchFuncionarios(): Promise<IFuncionario[]> {
+    return await apiFetch<IFuncionario[]>(
+      "http://localhost:8080/api/funcionarios",
+    );
+  }
+
+  async function fetchCargos(): Promise<ICargo[]> {
+    return await apiFetch<ICargo[]>("http://localhost:8080/api/cargos");
+  }
+
+  async function manageVinculo(
+    title: string,
+    defaultValues: Partial<IFuncionarioPorCargo> = {},
+  ): Promise<
+    SweetAlertResult<{
+      funcionarioId: string;
+      cargoId: string;
+      dataInicio: string;
+      dataFim: string;
+      detalhes: string;
+    }>
+  > {
+    const funcionarios = await fetchFuncionarios();
+    const cargos = await fetchCargos();
+
+    const funcionarioOptions = funcionarios
+      .map(
+        (f) =>
+          `<option value="${f.id}" ${
+            defaultValues.funcionario?.id === f.id ? "selected" : ""
+          }>${f.nome}</option>`,
+      )
+      .join("");
+
+    const cargoOptions = cargos
+      .map(
+        (c) =>
+          `<option value="${c.id}" ${
+            defaultValues.cargo?.id === c.id ? "selected" : ""
+          }>${c.nome}</option>`,
+      )
+      .join("");
+
+    const html = `
+      <div class="data-holder data-holder-center text-left">
+        <div>
+          <label>Funcionário</label>
+          <select id="funcionario">${funcionarioOptions}</select>
+        </div>
+        <div>
+          <label>Cargo</label>
+          <select id="cargo">${cargoOptions}</select>
+        </div>
+        <div>
+          <label>Data Início</label>
+          <input type="date" id="dataInicio" value="${defaultValues.dataInicio || ""}" required />
+        </div>
+        <div>
+          <label>Data Fim</label>
+          <input type="date" id="dataFim" value="${defaultValues.dataFim || ""}" />
+        </div>
+        <div>
+          <label>Detalhes</label>
+          <input type="text" id="detalhes" value="${defaultValues.detalhes || ""}" />
+        </div>
+      </div>
+    `;
+
+    const response = await Swal.fire({
+      title,
+      confirmButtonText: "Confirmar",
+      focusConfirm: false,
+      cancelButtonText: "Cancelar",
+      showCancelButton: true,
+      html,
+      preConfirm: (): any => {
+        const funcionarioEl = document.getElementById(
+          "funcionario",
+        ) as HTMLSelectElement;
+        const cargoEl = document.getElementById("cargo") as HTMLSelectElement;
+        const dataInicioEl = document.getElementById(
+          "dataInicio",
+        ) as HTMLInputElement;
+        const dataFimEl = document.getElementById(
+          "dataFim",
+        ) as HTMLInputElement;
+        const detalhesEl = document.getElementById(
+          "detalhes",
+        ) as HTMLInputElement;
+
+        const funcionarioId = funcionarioEl.value;
+        const cargoId = cargoEl.value;
+        const dataInicio = dataInicioEl.value;
+        const dataFim = dataFimEl.value;
+        const detalhes = detalhesEl.value;
+
+        if (!funcionarioId || !cargoId || !dataInicio) {
+          Swal.showValidationMessage(
+            "Funcionário, Cargo e Data Início são obrigatórios",
+          );
+          return null;
+        }
+
+        return { funcionarioId, cargoId, dataInicio, dataFim, detalhes };
+      },
+    });
+
+    return response;
+  }
+
+  function createRow(vinculo: IFuncionarioPorCargo): HTMLTableRowElement {
+    const row = document.createElement("tr");
+    row.dataset.id = String(vinculo.id);
+    row.className =
+      "grid grid-flow-col grid-cols-[0.3fr_1fr_1fr_1fr_1fr_0.3fr] w-full text-center [&_td]:flex [&_td]:items-center [&_td]:justify-center [&_td]:gap-3";
+
+    row.innerHTML = `
+      <td>${vinculo.id}</td>
+      <td>${vinculo.funcionario.nome}</td>
+      <td>${vinculo.cargo.nome}</td>
+      <td>${vinculo.dataInicio}</td>
+      <td>${vinculo.dataFim || "-"}</td>
+      <td>
+        <button class="!bg-[var(--color-yellow-600)] edit-btn">${createElement(PenSquare, { width: 18 }).outerHTML}</button>
+        <button class="!bg-[var(--color-red-500)] delete-btn">${createElement(Trash, { width: 18 }).outerHTML}</button>
+      </td>
+    `;
+    return row;
+  }
+
+  async function loadVinculos(): Promise<void> {
+    try {
+      const data = await apiFetch<IFuncionarioPorCargo[]>(
+        "http://localhost:8080/api/funcionarios-por-cargo",
+      );
+      data.forEach((vinculo) => {
+        const row = createRow(vinculo);
+        tbody.appendChild(row);
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Erro!", "Não foi possível carregar os vínculos.", "error");
+    }
+  }
+
+  addButton.addEventListener("click", async () => {
+    const response = await manageVinculo("Adicionar vínculo");
+    if (!response.isConfirmed || !response.value) return;
+
+    const { funcionarioId, cargoId, dataInicio, dataFim, detalhes } =
+      response.value;
+
+    try {
+      const { id: linkId } = await apiFetch<IFuncionarioPorCargo>(
+        "http://localhost:8080/api/funcionarios-por-cargo",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            funcionario: { id: parseInt(funcionarioId) },
+            cargo: { id: parseInt(cargoId) },
+            dataInicio,
+            dataFim: dataFim || null,
+            detalhes: detalhes || null,
+          }),
+        },
+      );
+
+      const newLink = await apiFetch<IFuncionarioPorCargo>(
+        `http://localhost:8080/api/funcionarios-por-cargo/${linkId}`,
+      );
+
+      const row = createRow(newLink);
+      tbody.appendChild(row);
+      Swal.fire("Sucesso!", "Vínculo criado com sucesso!", "success");
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Erro!", "Falha ao criar vínculo.", "error");
+    }
+  });
+
+  tbody.addEventListener("click", async (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const button = target.closest("button") as HTMLButtonElement | null;
+    if (!button) return;
+
+    const row = button.closest("tr") as HTMLTableRowElement;
+    const id = row.dataset.id;
+    if (!id) return;
+
+    if (button.classList.contains("edit-btn")) {
+      try {
+        const vinculo = await apiFetch<IFuncionarioPorCargo>(
+          `http://localhost:8080/api/funcionarios-por-cargo/${id}`,
+        );
+
+        const response = await manageVinculo("Editar vínculo", vinculo);
+        if (!response.isConfirmed || !response.value) return;
+
+        const { funcionarioId, cargoId, dataInicio, dataFim, detalhes } =
+          response.value;
+
+        await apiFetch<IFuncionarioPorCargo>(
+          `http://localhost:8080/api/funcionarios-por-cargo/${id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              funcionario: { id: parseInt(funcionarioId) },
+              cargo: { id: parseInt(cargoId) },
+              dataInicio,
+              dataFim: dataFim || null,
+              detalhes: detalhes || null,
+            }),
+          },
+        );
+
+        const newLink = await apiFetch<IFuncionarioPorCargo>(
+          `http://localhost:8080/api/funcionarios-por-cargo/${id}`,
+        );
+
+        const updatedRow = createRow(newLink);
+        tbody.replaceChild(updatedRow, row);
+
+        Swal.fire("Sucesso!", "Vínculo atualizado com sucesso!", "success");
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Erro!", "Não foi possível atualizar o vínculo.", "error");
+      }
+    }
+
+    if (button.classList.contains("delete-btn")) {
+      try {
+        await apiFetch<void>(
+          `http://localhost:8080/api/funcionarios-por-cargo/${id}`,
+          { method: "DELETE" },
+        );
+        row.remove();
+        Swal.fire("Sucesso!", "Vínculo excluído!", "success");
+      } catch {
+        Swal.fire("Erro!", "Não foi possível excluir o vínculo.", "error");
+      }
+    }
+  });
+
+  loadVinculos();
+</script>
